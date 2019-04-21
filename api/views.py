@@ -8,7 +8,7 @@ import xlrd
 from IPy import IP
 from subprocess import Popen, PIPE
 
-path = os.path.dirname(os.path.abspath("/home/rowegiel/Documents/workspace/fernanz/Python Input File.xlsx"))
+path = os.path.dirname(os.path.abspath("/home/rowegiel/rowegiel.pythonanywhere.com/Python Input File.xlsx"))
 contents = xlrd.open_workbook(path + '/Python Input File.xlsx')
 rows = contents.sheet_by_index(0)
 
