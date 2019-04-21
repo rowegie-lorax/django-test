@@ -1,3 +1,4 @@
 Django~=2.0.6
+django-cors-headers==2.5.2
 IPy==1.0
 xlrd==1.2.0
