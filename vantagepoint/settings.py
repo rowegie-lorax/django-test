@@ -25,7 +25,7 @@ SECRET_KEY = 'x8q%@%1_vc#whqi9=l5en#1x7^shfs7*t2vd!#t6ias+3lloag'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'rowegiel.pythonanywhere.com']
 
 
 # Application definition
