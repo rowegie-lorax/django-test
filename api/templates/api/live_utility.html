@@ -1,0 +1,17 @@
+{% extends 'api/index.html' %}
+{% block content %}
+    <h1>Quick Validation</h1>
+    <button type="button" class="btn btn-primary" id="liveUtilityReport">Utility to check live</button>
+    <table class="table" style="display: none" id="utilityTable">
+        <thead class="thead-dark">
+            <th colspan="2" style="text-align: center;">
+                <img class="img-responsive" src="/static/client/img/logo.jpeg" alt="" height="100" width="250">
+            </th>
+            <th colspan="8" style="text-align: center; vertical-align: middle;">
+                Network Utility
+            </th>   
+            <tr id="utilityHeader"></tr>
+        </thead>
+        <tbody id="utilityValues"></tbody>
+    </table>
+{% endblock %}
