@@ -1,0 +1,18 @@
+{% extends 'api/index.html' %}
+{% load static %}
+{% block content %}
+    <div class="row">
+        <p>Uploaded files:</p>
+        <ul>
+        {% for obj in documents %}
+            <li>
+                {{obj.extension}}
+                <a href="/add-views?file_id={{obj.id}}" target="_blank">
+                    {{ obj.document.name }}
+                </a>
+                <small>(Uploaded at: {{ obj.uploaded_at }})</small>
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

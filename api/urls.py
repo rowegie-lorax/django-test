@@ -1,13 +1,17 @@
+from vantagepoint import settings
 from django.urls import path
 from . import views
 from django.conf.urls.static import static
-from vantagepoint import settings
 
 urlpatterns = [
-	# HTML views
+    # HTML views
     path('', views.index, name='index'),
+    path('home', views.home, name='home'),
     path('live-utility-check', views.live_utility, name='live_utility'),
+    path('upload-docs', views.file_upload, name='file_upload'),
     # Logic
+    path('add-views', views.add_views, name='add_views'),
+    path('upload-file', views.upload_file, name='upload_file'),
     path('parse', views.parse_excel, name='parse_excel'),
     path('ip-addresses', views.get_all_ip_address, name='get_ip_addresses'),
     path('get-ping-status', views.get_ping_status, name='get_ping_status'),

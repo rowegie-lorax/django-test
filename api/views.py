@@ -1,25 +1,79 @@
-from django.shortcuts import render
-from django.http import JsonResponse
-
+from vantagepoint.settings import BASE_DIR
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponse
+from django.core.files.storage import FileSystemStorage
 # excel parser
 import os
 import subprocess
 import xlrd
 from IPy import IP
 from subprocess import Popen, PIPE
+# models, forms
+from api.models import (
+    FileDirectory,
+    FileViews
+)
+from api.forms import DocumentForm
 
-path = os.path.dirname(os.path.abspath("/home/rowegiel/rowegiel.pythonanywhere.com/Python Input File.xlsx"))
+path = os.path.dirname(os.path.abspath(BASE_DIR + '/Python Input File.xlsx'))
 contents = xlrd.open_workbook(path + '/Python Input File.xlsx')
 rows = contents.sheet_by_index(0)
 
 # html views
+def home(request):
+    documents = FileDirectory.objects.all()
+    return render(request, 'api/home.html', { 'documents': documents })
+
 def index(request):
     return render(request, 'api/report.html', {})
 
 def live_utility(request):
     return render(request, 'api/live_utility.html', {})
 
+def file_upload(request):
+    return render(request, 'api/file_upload.html', {})
+
 # logic
+def search_file(request):
+    retVal = {}
+    if request.method == 'POST':
+        file_name = request.POST['filename']
+        file_extension = request.POST['extension']
+        file_ = 'documents/' + file_name + file_extension
+        result = FileDirectory.objects.get(document__name=file_)
+        if result and result.extension == file_extension:
+            views = FileViews.objects.get(file=result)
+            return JsonResponse({
+                'file_url': result.documents.url,
+                'desc': result.description,
+                'number_of_views': views.number_of_views
+            })
+
+def add_views(request):
+    if request.method == 'GET':
+        file_id = (request.GET['file_id'])
+        try:
+            fd = FileDirectory.objects.get(pk=int(file_id))
+            fv, created = FileViews.objects.get_or_create(file=fd)
+            if created:
+                fv.number_of_views = 1
+            else:
+                fv.number_of_views = fv.number_of_views + 1
+
+            fv.save()
+            return redirect(fd.document.url)
+        except FileDirectory.DoesNotExist:
+            raise JsonResponse({'error': 'File not found!'})
+
+def upload_file(request):
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'message': 'File uploaded successfully!'})
+        else:
+            return JsonResponse({'error': 'Error uploading the file'})
+
 def get_l2vpn_status(request):
     ip = request.GET['ip']
     counter = 0
