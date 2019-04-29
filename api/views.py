@@ -2,6 +2,7 @@ from vantagepoint.settings import BASE_DIR
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.core.files.storage import FileSystemStorage
+from django.views.decorators.csrf import csrf_exempt
 # excel parser
 import os
 import subprocess
@@ -34,6 +35,7 @@ def file_upload(request):
     return render(request, 'api/file_upload.html', {})
 
 # logic
+@csrf_exempt
 def search_file(request):
     retVal = {}
     if request.method == 'POST':
@@ -65,6 +67,7 @@ def add_views(request):
         except FileDirectory.DoesNotExist:
             raise JsonResponse({'error': 'File not found!'})
 
+@csrf_exempt
 def upload_file(request):
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
