@@ -2,7 +2,6 @@ from django.db import models
 import os
 
 
-# Create your models here.
 class FileDirectory(models.Model):
     document = models.FileField(null=True, upload_to='documents/')
     description = models.TextField(null=True, blank=True)

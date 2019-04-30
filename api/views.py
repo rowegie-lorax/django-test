@@ -1,8 +1,8 @@
 from vantagepoint.settings import BASE_DIR
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponse
-from django.core.files.storage import FileSystemStorage
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ValidationError
 # excel parser
 import os
 import json
@@ -41,27 +41,35 @@ def file_upload(request):
 # logic
 @csrf_exempt
 def search_file(request):
-    retVal = {}
+    retVal = []
     if request.method == 'POST':
         try:
             data_ = json.loads(request.body.decode('utf-8'))
-            file_name = data_.get('filename')
+            file_name = data_.get('keyword')
             file_extension = data_.get('extension')
-            file_ = 'documents/' + file_name
-            file_ = '.'.join( (file_, file_extension) )
-            result = FileDirectory.objects.filter(document=file_).first()
-            if result and result.extension() == file_extension:
-                views = FileViews.objects.get(file=result)
-                return JsonResponse({
-                    'file_url': BASE_URL + result.document.url,
-                    'desc': result.description,
-                    'number_of_views': views.number_of_views
-                })
-            else:
-                return JsonResponse({'error': 'File not found! '})
+            file_ = '.'.join( (file_name, file_extension) )
+            # check filenames
+            result = FileDirectory.objects.filter(document__icontains=file_)
+            for data in result:
+                if data.extension() == file_extension:
+                    views = FileViews.objects.get(file=data)
+                    retVal.append({
+                        'file_url': BASE_URL + data.document.url,
+                        'desc': data.description,
+                        'number_of_views': views.number_of_views
+                    })
+            # check file content
+            content = FileDirectory.objects.all()
+            for data in content:
+                data.document.open(mode='rb')
+                lines = data.document.readlines()
+                print(lines)
+                data.document.close()
+
+            return JsonResponse(retVal, status=200, safe=False)
         except FileDirectory.DoesNotExist:
-            return JsonResponse({'error': 'File not found!'})
-    return JsonResponse({'error': 'Something went wrong'})
+            return JsonResponse({'error': 'File not found!'}, status=404)
+    return JsonResponse({'error': 'Something went wrong'}, status=400)
 
 def add_views(request):
     if request.method == 'GET':
@@ -77,19 +85,30 @@ def add_views(request):
             fv.save()
             return redirect(fd.document.url)
         except FileDirectory.DoesNotExist:
-            raise JsonResponse({'error': 'File not found!'})
+            raise JsonResponse({'error': 'File not found!'}, status=400)
 
 @csrf_exempt
 def upload_file(request):
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
+        # check if file is valid
+        file = request.FILES['document'].name
+        size = request.FILES['document'].size
+        #check file size
+        if size > 2097152:
+            return JsonResponse({'message': 'File is too big.'}, status=400)
+        # check if file exists
+        check_file = FileDirectory.objects.filter(document__icontains=file).exists()
+        if check_file:
+            return JsonResponse({'message': 'File already exists.'}, status=400)
+        #check if form is valid
         if form.is_valid():
             new_file = form.save()
             fd = FileDirectory.objects.get(pk=new_file.pk)
             FileViews.objects.create(**{'file': fd, 'number_of_views': 0})
             return JsonResponse({'message': 'File uploaded successfully!'})
     else:
-        return JsonResponse({'error': 'Error uploading the file'})
+        form = DocumentForm()
 
 def get_l2vpn_status(request):
     ip = request.GET['ip']
