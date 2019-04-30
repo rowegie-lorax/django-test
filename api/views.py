@@ -92,9 +92,11 @@ def add_views(request):
                 fv.number_of_views = fv.number_of_views + 1
 
             fv.save()
-            return redirect(fd.document.url)
+            return JsonResponse({
+                'url': BASE_URL + fd.document.url, 'number_of_views': fv.number_of_views
+            }, status=200)
         except FileDirectory.DoesNotExist:
-            raise JsonResponse({'error': 'File not found!'}, status=400)
+            return JsonResponse({'error': 'File not found!'}, status=400)
 
 @csrf_exempt
 def upload_file(request):
