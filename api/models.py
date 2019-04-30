@@ -8,12 +8,15 @@ class FileDirectory(models.Model):
     description = models.TextField(null=True, blank=True)
     uploaded_at = models.DateTimeField(null=True, auto_now_add=True)
 
+    def filename(self):
+        return os.path.basename(self.document.name)
+
     def extension(self):
         name, extension = os.path.splitext(self.document.name)
         return str(extension).replace('.', '')
 
     def __str__(self):
-        return self.filename
+        return self.document.name
 
 
 class FileViews(models.Model):

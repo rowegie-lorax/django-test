@@ -5,6 +5,7 @@ from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
 # excel parser
 import os
+import json
 import subprocess
 import xlrd
 from IPy import IP
@@ -19,6 +20,9 @@ from api.forms import DocumentForm
 path = os.path.dirname(os.path.abspath(BASE_DIR + '/Python Input File.xlsx'))
 contents = xlrd.open_workbook(path + '/Python Input File.xlsx')
 rows = contents.sheet_by_index(0)
+
+BASE_URL = 'https://rowegiel.pythonanywhere.com'
+
 
 # html views
 def home(request):
@@ -39,17 +43,25 @@ def file_upload(request):
 def search_file(request):
     retVal = {}
     if request.method == 'POST':
-        file_name = request.POST['filename']
-        file_extension = request.POST['extension']
-        file_ = 'documents/' + file_name + file_extension
-        result = FileDirectory.objects.get(document__name=file_)
-        if result and result.extension == file_extension:
-            views = FileViews.objects.get(file=result)
-            return JsonResponse({
-                'file_url': result.documents.url,
-                'desc': result.description,
-                'number_of_views': views.number_of_views
-            })
+        try:
+            data_ = json.loads(request.body.decode('utf-8'))
+            file_name = data_.get('filename')
+            file_extension = data_.get('extension')
+            file_ = 'documents/' + file_name
+            file_ = '.'.join( (file_, file_extension) )
+            result = FileDirectory.objects.filter(document=file_).first()
+            if result and result.extension() == file_extension:
+                views = FileViews.objects.get(file=result)
+                return JsonResponse({
+                    'file_url': BASE_URL + result.document.url,
+                    'desc': result.description,
+                    'number_of_views': views.number_of_views
+                })
+            else:
+                return JsonResponse({'error': 'File not found! '})
+        except FileDirectory.DoesNotExist:
+            return JsonResponse({'error': 'File not found!'})
+    return JsonResponse({'error': 'Something went wrong'})
 
 def add_views(request):
     if request.method == 'GET':
@@ -72,10 +84,12 @@ def upload_file(request):
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            new_file = form.save()
+            fd = FileDirectory.objects.get(pk=new_file.pk)
+            FileViews.objects.create(**{'file': fd, 'number_of_views': 0})
             return JsonResponse({'message': 'File uploaded successfully!'})
-        else:
-            return JsonResponse({'error': 'Error uploading the file'})
+    else:
+        return JsonResponse({'error': 'Error uploading the file'})
 
 def get_l2vpn_status(request):
     ip = request.GET['ip']
@@ -392,7 +406,7 @@ def parse_excel(request):
             mplss_status = str(rows.cell_value(rowx=counter, colx=mplss_col))
             mpgbps_status = str(rows.cell_value(rowx=counter, colx=mpgbps_col))
             l2vpn_status = str(rows.cell_value(rowx=counter, colx=l2vpn_col))
-    
+
             retVal.append({
                 "serial_number": serial_value.strip(),
                 "ip_address": str(ip_address),

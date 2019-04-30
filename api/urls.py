@@ -12,6 +12,7 @@ urlpatterns = [
     # Logic
     path('add-views', views.add_views, name='add_views'),
     path('upload-file', views.upload_file, name='upload_file'),
+    path('search-file', views.search_file, name='search_file'),
     path('parse', views.parse_excel, name='parse_excel'),
     path('ip-addresses', views.get_all_ip_address, name='get_ip_addresses'),
     path('get-ping-status', views.get_ping_status, name='get_ping_status'),
