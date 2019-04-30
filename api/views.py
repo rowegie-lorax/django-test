@@ -57,6 +57,7 @@ def search_file(request):
                     views = FileViews.objects.get(file=data)
                     name_ = (data.document.name).split('/')
                     retVal.append({
+                        'id': data.id,
                         'file_name': name_[1],
                         'file_url': BASE_URL + data.document.url,
                         'desc': data.description,
