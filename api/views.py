@@ -57,9 +57,8 @@ def search_file(request):
                     views = FileViews.objects.get(file=data)
                     name_ = (data.document.name).split('/')
                     retVal.append({
-                        'id': data.id,
                         'file_name': name_[1],
-                        'file_url': BASE_URL + data.document.url,
+                        'file_url': BASE_URL + '/add_views?file_id=' + str(data.id),
                         'desc': data.description,
                         'number_of_views': views.number_of_views
                     })
@@ -92,9 +91,7 @@ def add_views(request):
                 fv.number_of_views = fv.number_of_views + 1
 
             fv.save()
-            return JsonResponse({
-                'url': BASE_URL + fd.document.url, 'number_of_views': fv.number_of_views
-            }, status=200)
+            return redirect(fd.document.url)
         except FileDirectory.DoesNotExist:
             return JsonResponse({'error': 'File not found!'}, status=400)
 
