@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 # excel parser
 import os
 import json
@@ -49,22 +50,29 @@ def search_file(request):
             file_extension = data_.get('extension')
             file_ = '.'.join( (file_name, file_extension) )
             # check filenames
-            result = FileDirectory.objects.filter(document__icontains=file_)
+            filter_ = Q(document__icontains=file_extension) &  Q(document__icontains=file_name)
+            result = FileDirectory.objects.filter(filter_)
             for data in result:
                 if data.extension() == file_extension:
                     views = FileViews.objects.get(file=data)
+                    name_ = (data.document.name).split('/')
                     retVal.append({
+                        'file_name': name_[1],
                         'file_url': BASE_URL + data.document.url,
                         'desc': data.description,
                         'number_of_views': views.number_of_views
                     })
             # check file content
-            content = FileDirectory.objects.all()
-            for data in content:
-                data.document.open(mode='rb')
-                lines = data.document.readlines()
-                print(lines)
-                data.document.close()
+            # content = FileDirectory.objects.all()
+            # for data in content:
+            #     if file_extension == 'txt':
+            #         print('txt file')
+
+            #     if file_extension == 'pdf':
+            #         print('pdf file')
+
+            #     if file_extension == 'docx':
+            #         print('docx file')
 
             return JsonResponse(retVal, status=200, safe=False)
         except FileDirectory.DoesNotExist:
