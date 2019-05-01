@@ -48,32 +48,26 @@ def search_file(request):
             data_ = json.loads(request.body.decode('utf-8'))
             file_name = data_.get('keyword')
             file_extension = data_.get('extension')
-            file_ = '.'.join( (file_name, file_extension) )
+            if file_extension == 'all':
+                filter_ = Q(document__icontains=file_name)
+            else:
+                filter_ = Q(document__icontains=file_extension) &  Q(document__icontains=file_name)
             # check filenames
-            filter_ = Q(document__icontains=file_extension) &  Q(document__icontains=file_name)
             result = FileDirectory.objects.filter(filter_)
             for data in result:
+                if file_extension == 'all':
+                    views = FileViews.objects.get(file=data)
+                    name_ = (data.document.name).split('/')
                 if data.extension() == file_extension:
                     views = FileViews.objects.get(file=data)
                     name_ = (data.document.name).split('/')
-                    retVal.append({
-                        'file_name': name_[1],
-                        'file_url': BASE_URL + '/add-views?file_id=' + str(data.id),
-                        'desc': data.description,
-                        'number_of_views': views.number_of_views
-                    })
-            # check file content
-            # content = FileDirectory.objects.all()
-            # for data in content:
-            #     if file_extension == 'txt':
-            #         print('txt file')
 
-            #     if file_extension == 'pdf':
-            #         print('pdf file')
-
-            #     if file_extension == 'docx':
-            #         print('docx file')
-
+                retVal.append({
+                    'file_name': name_[1],
+                    'file_url': BASE_URL + '/add-views?file_id=' + str(data.id),
+                    'desc': data.description,
+                    'number_of_views': views.number_of_views
+                })
             return JsonResponse(retVal, status=200, safe=False)
         except FileDirectory.DoesNotExist:
             return JsonResponse({'error': 'File not found!'}, status=404)
