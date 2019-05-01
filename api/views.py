@@ -47,7 +47,7 @@ def search_file(request):
         try:
             data_ = json.loads(request.body.decode('utf-8'))
             file_name = data_.get('keyword')
-            file_extension = data_.get(' ')
+            file_extension = data_.get('extension')
             file_ = '.'.join( (file_name, file_extension) )
             # check filenames
             filter_ = Q(document__icontains=file_extension) &  Q(document__icontains=file_name)
