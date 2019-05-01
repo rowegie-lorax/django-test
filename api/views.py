@@ -115,7 +115,7 @@ def upload_file(request):
             new_file = form.save()
             fd = FileDirectory.objects.get(pk=new_file.pk)
             FileViews.objects.create(**{'file': fd, 'number_of_views': 0})
-            return JsonResponse({'message': 'File uploaded successfully!' + file})
+            return JsonResponse({'message': 'File uploaded successfully!'})
     else:
         form = DocumentForm()
 
