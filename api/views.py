@@ -47,7 +47,7 @@ def search_file(request):
         try:
             data_ = json.loads(request.body.decode('utf-8'))
             file_name = data_.get('keyword')
-            file_extension = data_.get('extension')
+            file_extension = data_.get(' ')
             file_ = '.'.join( (file_name, file_extension) )
             # check filenames
             filter_ = Q(document__icontains=file_extension) &  Q(document__icontains=file_name)
@@ -102,6 +102,7 @@ def upload_file(request):
         # check if file is valid
         file = request.FILES['document'].name
         size = request.FILES['document'].size
+        file = file.replace(' ', '_')
         #check file size
         if size > 2097152:
             return JsonResponse({'message': 'File is too big.'}, status=400)
@@ -114,7 +115,7 @@ def upload_file(request):
             new_file = form.save()
             fd = FileDirectory.objects.get(pk=new_file.pk)
             FileViews.objects.create(**{'file': fd, 'number_of_views': 0})
-            return JsonResponse({'message': 'File uploaded successfully!'})
+            return JsonResponse({'message': 'File uploaded successfully!' + file})
     else:
         form = DocumentForm()
 
