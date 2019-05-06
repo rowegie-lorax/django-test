@@ -1,6 +1,7 @@
 from vantagepoint import settings
 from django.urls import path
 from . import views
+from api.views import ShiftHandoverView
 from django.conf.urls.static import static
 
 urlpatterns = [
@@ -10,6 +11,7 @@ urlpatterns = [
     path('live-utility-check', views.live_utility, name='live_utility'),
     path('upload-docs', views.file_upload, name='file_upload'),
     # Logic
+    path('shifthandover', ShiftHandoverView.as_view(), name='add_shifthandover'),
     path('add-views', views.add_views, name='add_views'),
     path('upload-file', views.upload_file, name='upload_file'),
     path('search-file', views.search_file, name='search_file'),

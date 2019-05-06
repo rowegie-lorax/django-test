@@ -117,6 +117,12 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Email
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST_USER = 'basil_kit'
+EMAIL_HOST_PASSWORD = 'Lovebasil@123'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

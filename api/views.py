@@ -4,6 +4,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.core import serializers
 # excel parser
 import os
 import json
@@ -11,10 +14,17 @@ import subprocess
 import xlrd
 from IPy import IP
 from subprocess import Popen, PIPE
+from datetime import datetime
 # models, forms
 from api.models import (
     FileDirectory,
-    FileViews
+    FileViews,
+    Shift,
+    GeneralComment,
+    Incident,
+    Role,
+    User,
+    ShiftHandOver,
 )
 from api.forms import DocumentForm
 
@@ -23,6 +33,202 @@ contents = xlrd.open_workbook(path + '/Python Input File.xlsx')
 rows = contents.sheet_by_index(0)
 
 BASE_URL = 'https://rowegiel.pythonanywhere.com'
+
+
+# class based views
+class ShiftHandoverView(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(ShiftHandoverView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        incidents = []
+        comments = []
+        shift_members = []
+        if request.method == 'GET':
+            pk = request.GET.get('pk', None)
+            if pk:
+                data = {}
+                try:
+                    handover = ShiftHandOver.objects.get(pk=int(pk))
+                    if handover:
+                        shift = Shift.objects.get(pk=handover.shift.id)
+                        sender = User.objects.get(pk=handover.sender.id)
+                        sender_role = Role.objects.get(pk=sender.role.id)
+                        receiver = User.objects.get(pk=handover.receiver.id)
+                        receiver_role = Role.objects.get(pk=receiver.role.id)
+                        # incidents 
+                        for incident in handover.incidents.all():
+                            incidents.append({
+                                'priority': incident.priority,
+                                'incident': incident.incident,
+                                'description': incident.description,
+                                'comment': incident.comment
+                            })
+
+                        for comment in handover.comments.all():
+                            comments.append({
+                                'comment': comment.comment
+                            })
+
+                        for member in handover.shift_members.all():
+                            member_role = Role.objects.get(pk=member.role.id)
+                            shift_members.append({
+                                'first_name': member.first_name,
+                                'last_name': member.last_name ,
+                                'email': member.email,
+                                'role': {
+                                    'name': member_role.name,
+                                    'abbreviation': member_role.abbreviation
+                                }
+                            })
+
+                        data = {
+                            'date': handover.date,
+                            'shift': {
+                                'name': shift.name,
+                                'time_in': shift.time_in,
+                                'time_out': shift.time_out
+                            },
+                            'sender': {
+                                'first_name': sender.first_name,
+                                'last_name': sender.last_name ,
+                                'email': sender.email,
+                                'role': {
+                                    'name': sender_role.name,
+                                    'abbreviation': sender_role.abbreviation
+                                }
+                            },
+                            'receiver': {
+                                'first_name': receiver.first_name,
+                                'last_name': receiver.last_name,
+                                'email': receiver.email,
+                                'role': {
+                                    'name': receiver_role.name,
+                                    'abbreviation': receiver_role.abbreviation
+                                }
+                            },
+                            'incidents': incidents,
+                            'comments': comments,
+                            'shift_members': shift_members
+                        }
+                        return JsonResponse({'data': data}, status=200)
+                except ShiftHandOver.DoesNotExist:
+                    return JsonResponse({'error': 'Shift Handover not found!'}, status=404)
+            else:
+                data = []
+                handovers = ShiftHandOver.objects.all().order_by('-date')
+                if handovers:
+                    for handover in handovers:
+                        shift = Shift.objects.get(pk=handover.shift.id)
+                        sender = User.objects.get(pk=handover.sender.id)
+                        sender_role = Role.objects.get(pk=sender.role.id)
+                        receiver = User.objects.get(pk=handover.receiver.id)
+                        receiver_role = Role.objects.get(pk=receiver.role.id)
+                        # incidents 
+                        for incident in handover.incidents.all():
+                            incidents.append({
+                                'priority': incident.priority,
+                                'incident': incident.incident,
+                                'description': incident.description,
+                                'comment': incident.comment
+                            })
+
+                        for comment in handover.comments.all():
+                            comments.append({
+                                'comment': comment.comment
+                            })
+
+                        for member in handover.shift_members.all():
+                            member_role = Role.objects.get(pk=member.role.id)
+                            shift_members.append({
+                                'first_name': member.first_name,
+                                'last_name': member.last_name ,
+                                'email': member.email,
+                                'role': {
+                                    'name': member_role.name,
+                                    'abbreviation': member_role.abbreviation
+                                }
+                            })
+
+                        data.append({
+                            'date': handover.date,
+                            'shift': {
+                                'name': shift.name,
+                                'time_in': shift.time_in,
+                                'time_out': shift.time_out
+                            },
+                            'sender': {
+                                'first_name': sender.first_name,
+                                'last_name': sender.last_name ,
+                                'email': sender.email,
+                                'role': {
+                                    'name': sender_role.name,
+                                    'abbreviation': sender_role.abbreviation
+                                }
+                            },
+                            'receiver': {
+                                'first_name': receiver.first_name,
+                                'last_name': receiver.last_name,
+                                'email': receiver.email,
+                                'role': {
+                                    'name': receiver_role.name,
+                                    'abbreviation': receiver_role.abbreviation
+                                }
+                            },
+                            'incidents': incidents,
+                            'comments': comments,
+                            'shift_members': shift_members
+                        })
+                    return JsonResponse({'data': data}, status=200)
+                return JsonResponse({'error': 'No data found for shift handovers!'}, status=404)
+
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            data = json.loads(request.body.decode('utf-8'))
+            date = data.get('date', None)
+            shift_id = data.get('shift_id', None)
+            sender_id = data.get('sender_id', None)
+            receiver_id = data.get('receiver_id', None)
+            shift_members = data.get('shift_members', None)
+            incidents = data.get('incidents', None)
+            comments = data.get('comments', None)
+            # get shift
+            shift = Shift.objects.get(pk=int(shift_id))
+            # get sender and receiver
+            sender = User.objects.get(pk=int(sender_id))
+            receiver = User.objects.get(pk=int(receiver_id))
+            # save shift handover
+            shift_handover = ShiftHandOver()
+            shift_handover.date = datetime.strptime(date, "%Y-%m-%d")
+            shift_handover.shift = shift
+            shift_handover.sender = sender
+            shift_handover.receiver = receiver
+            shift_handover.save()
+
+            for incident in incidents:
+                _incident = Incident()
+                _incident.priority = incident['priority']
+                _incident.incident = incident['incident']
+                _incident.description = incident['description']
+                _incident.comment = incident['comment']
+                _incident.save()
+                shift_handover.incidents.add(_incident)
+
+            for comment in comments:
+                g_comment = GeneralComment()
+                g_comment.comment = comment['comment']  
+                g_comment.save()
+                shift_handover.comments.add(g_comment)
+
+            s_members = User.objects.filter(pk__in=shift_members)
+
+            for shift_member in s_members:
+                shift_handover.shift_members.add(shift_member)
+
+            shift_handover.save()
+            return JsonResponse({'message': 'Shift saved'})
 
 
 # html views
