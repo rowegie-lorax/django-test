@@ -36,8 +36,100 @@ BASE_URL = 'https://rowegiel.pythonanywhere.com'
 
 
 # class based views
-class ShiftHandoverView(View):
+class ShiftView(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(ShiftView, self).dispatch(request, *args, **kwargs)
 
+    def get(self, request):
+        if request.method == 'GET':
+            data = []
+            shifts = Shift.objects.all()
+            if shifts:
+                for shift in shifts:
+                    data.append({
+                        'id': shift.id,
+                        'name': shift.name,
+                        'time_in': shift.time_in,
+                        'time_out': shift.time_out
+                    })
+
+                return JsonResponse({'data': data}, status=200)
+
+            return JsonResponse({'error': 'No shift(s) found on your database.'})
+
+
+class RoleView(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(RoleView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        if request.method == 'GET':
+            data = []
+            roles = Role.objects.all()
+            if roles:
+                for role in roles:
+                    data.append({
+                        'id': role.id,
+                        'name': role.name,
+                        'abbreviation': role.abbreviation
+                    })
+
+                return JsonResponse({'data': data}, status=200)
+
+            return JsonResponse({'error': 'No role(s) found on your database.'})
+
+
+class UserView(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super(UserView, self).dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        if request.method == 'GET':
+            data = {};
+            pk = request.GET.get('pk', None)
+            if pk:
+                try:
+                    user = User.objects.get(pk=pk)
+                    if user:
+                        role = Role.objects.get(pk=user.role.id)
+                        data = {
+                            'id': user.id,
+                            'first_name': user.first_name,
+                            'last_name': user.last_name,
+                            'email': user.email,
+                            'role': {
+                                'name': role.name,
+                                'abbreviation': role.abbreviation
+                            }
+                        }
+                except User.DoesNotExist:
+                    return JsonResponse({'error': 'User not found.'}, status=404)
+            else:
+                data = []
+                users = User.objects.all()
+                if users:
+                    for user in users:
+                        role = Role.objects.get(pk=user.role.id)
+                        data.append({
+                            'id': user.id,
+                            'first_name': user.first_name,
+                            'last_name': user.last_name,
+                            'email': user.email,
+                            'role': {
+                                'name': role.name,
+                                'abbreviation': role.abbreviation
+                            }
+                        })
+
+                    return JsonResponse({'data': data}, status=200)
+
+            return JsonResponse({'error': 'No user(s) found on your database.'}, status=404)
+
+
+class ShiftHandoverView(View):
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(ShiftHandoverView, self).dispatch(request, *args, **kwargs)
@@ -85,6 +177,7 @@ class ShiftHandoverView(View):
                             })
 
                         data = {
+                            'id': handover.id,
                             'date': handover.date,
                             'shift': {
                                 'name': shift.name,
@@ -153,6 +246,7 @@ class ShiftHandoverView(View):
                             })
 
                         data.append({
+                            'id': handover.id,
                             'date': handover.date,
                             'shift': {
                                 'name': shift.name,
