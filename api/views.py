@@ -222,7 +222,7 @@ class ShiftHandoverView(View):
                     return JsonResponse({'error': 'Shift Handover not found!'}, status=404)
             else:
                 data = []
-                handovers = ShiftHandOver.objects.all().order_by('-date')
+                handovers = ShiftHandOver.objects.all().order_by('-date').order_by('-id')
                 if handovers:
                     for handover in handovers:
                         shift = Shift.objects.get(pk=handover.shift.id)
@@ -299,6 +299,7 @@ class ShiftHandoverView(View):
                 return JsonResponse({'error': 'No data found for shift handovers!'}, status=404)
 
     def post(self, request, *args, **kwargs):
+        counter = 0
         if request.method == 'POST':
             data = json.loads(request.body.decode('utf-8'))
             date = data.get('date', None)
@@ -343,9 +344,7 @@ class ShiftHandoverView(View):
 
             shift_handover.save()
             return JsonResponse({
-                'message': 'Shift saved',
-                'incidents': incidents,
-                'comments': comments
+                'message': 'Shift saved'
             })
 
 
