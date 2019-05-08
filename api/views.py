@@ -299,7 +299,6 @@ class ShiftHandoverView(View):
                 return JsonResponse({'error': 'No data found for shift handovers!'}, status=404)
 
     def post(self, request, *args, **kwargs):
-        counter = 0
         if request.method == 'POST':
             data = json.loads(request.body.decode('utf-8'))
             date = data.get('date', None)
