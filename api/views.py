@@ -101,6 +101,7 @@ class UserView(View):
                             'last_name': user.last_name,
                             'email': user.email,
                             'role': {
+                                'id': role.id,
                                 'name': role.name,
                                 'abbreviation': role.abbreviation
                             }
@@ -119,6 +120,7 @@ class UserView(View):
                             'last_name': user.last_name,
                             'email': user.email,
                             'role': {
+                                'id': role.id,
                                 'name': role.name,
                                 'abbreviation': role.abbreviation
                             }
@@ -153,6 +155,7 @@ class ShiftHandoverView(View):
                         # incidents 
                         for incident in handover.incidents.all():
                             incidents.append({
+                                'id': incident.id,
                                 'priority': incident.priority,
                                 'incident': incident.incident,
                                 'description': incident.description,
@@ -161,16 +164,19 @@ class ShiftHandoverView(View):
 
                         for comment in handover.comments.all():
                             comments.append({
+                                'id': comment.id,
                                 'comment': comment.comment
                             })
 
                         for member in handover.shift_members.all():
                             member_role = Role.objects.get(pk=member.role.id)
                             shift_members.append({
+                                'id': member.id,
                                 'first_name': member.first_name,
                                 'last_name': member.last_name ,
                                 'email': member.email,
                                 'role': {
+                                    'id': member_role.id,
                                     'name': member_role.name,
                                     'abbreviation': member_role.abbreviation
                                 }
@@ -180,24 +186,29 @@ class ShiftHandoverView(View):
                             'id': handover.id,
                             'date': handover.date,
                             'shift': {
+                                'id': shift.id,
                                 'name': shift.name,
                                 'time_in': shift.time_in,
                                 'time_out': shift.time_out
                             },
                             'sender': {
+                                'id': sender.id,
                                 'first_name': sender.first_name,
                                 'last_name': sender.last_name ,
                                 'email': sender.email,
                                 'role': {
+                                    'id': sender_role.id,
                                     'name': sender_role.name,
                                     'abbreviation': sender_role.abbreviation
                                 }
                             },
                             'receiver': {
+                                'id': receiver.id,
                                 'first_name': receiver.first_name,
                                 'last_name': receiver.last_name,
                                 'email': receiver.email,
                                 'role': {
+                                    'id': receiver_role.id,
                                     'name': receiver_role.name,
                                     'abbreviation': receiver_role.abbreviation
                                 }
@@ -222,6 +233,7 @@ class ShiftHandoverView(View):
                         # incidents 
                         for incident in handover.incidents.all():
                             incidents.append({
+                                'id': incident.id,
                                 'priority': incident.priority,
                                 'incident': incident.incident,
                                 'description': incident.description,
@@ -230,16 +242,19 @@ class ShiftHandoverView(View):
 
                         for comment in handover.comments.all():
                             comments.append({
+                                'id': comment.id,
                                 'comment': comment.comment
                             })
 
                         for member in handover.shift_members.all():
                             member_role = Role.objects.get(pk=member.role.id)
                             shift_members.append({
+                                'id': member.id,
                                 'first_name': member.first_name,
                                 'last_name': member.last_name ,
                                 'email': member.email,
                                 'role': {
+                                    'id': member_role.id,
                                     'name': member_role.name,
                                     'abbreviation': member_role.abbreviation
                                 }
@@ -249,24 +264,29 @@ class ShiftHandoverView(View):
                             'id': handover.id,
                             'date': handover.date,
                             'shift': {
+                                'id': shift.id,
                                 'name': shift.name,
                                 'time_in': shift.time_in,
                                 'time_out': shift.time_out
                             },
                             'sender': {
+                                'id': sender.id,
                                 'first_name': sender.first_name,
                                 'last_name': sender.last_name ,
                                 'email': sender.email,
                                 'role': {
+                                    'id': sender_role.id,
                                     'name': sender_role.name,
                                     'abbreviation': sender_role.abbreviation
                                 }
                             },
                             'receiver': {
+                                'id': receiver.id,
                                 'first_name': receiver.first_name,
                                 'last_name': receiver.last_name,
                                 'email': receiver.email,
                                 'role': {
+                                    'id': receiver_role.id,
                                     'name': receiver_role.name,
                                     'abbreviation': receiver_role.abbreviation
                                 }
@@ -302,18 +322,18 @@ class ShiftHandoverView(View):
             shift_handover.save()
 
             for incident in incidents:
-                _incident = Incident()
-                _incident.priority = incident['priority']
-                _incident.incident = incident['incident']
-                _incident.description = incident['description']
-                _incident.comment = incident['comment']
-                _incident.save()
+                _incident = Incident.objects.create(
+                    priority=incident['priority'],
+                    incident=incident['incident'],
+                    description=incident['description'],
+                    comment=incident['comment']
+                )
                 shift_handover.incidents.add(_incident)
 
             for comment in comments:
-                g_comment = GeneralComment()
-                g_comment.comment = comment['comment']  
-                g_comment.save()
+                g_comment = GeneralComment.objects.create(
+                    comment=comment['comment']
+                )
                 shift_handover.comments.add(g_comment)
 
             s_members = User.objects.filter(pk__in=shift_members)
@@ -322,7 +342,11 @@ class ShiftHandoverView(View):
                 shift_handover.shift_members.add(shift_member)
 
             shift_handover.save()
-            return JsonResponse({'message': 'Shift saved'})
+            return JsonResponse({
+                'message': 'Shift saved',
+                'incidents': incidents,
+                'comments': comments
+            })
 
 
 # html views
